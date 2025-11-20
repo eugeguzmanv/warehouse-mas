@@ -9,6 +9,7 @@ class WarehouseModel(Model):
     The Simulation Model Environment.
     """
     def __init__(self, M=20, N=20, num_robots=5, num_boxes=20):
+        super().__init__()
         self.num_robots = num_robots
         self.num_boxes = num_boxes
         self.grid = MultiGrid(M, N, True) # Torus=True for easier movement, or False for walls

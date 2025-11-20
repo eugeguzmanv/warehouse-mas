@@ -1,6 +1,6 @@
 from mesa.visualization.modules import CanvasGrid, ChartModule
 from mesa.visualization.ModularVisualization import ModularServer
-from mesa.visualization.UserParam import UserSettableParameter
+from mesa.visualization.UserParam import Slider
 from model import WarehouseModel
 from agents import RobotAgent, Box, Shelf
 
@@ -68,7 +68,7 @@ server = ModularServer(
     {
         "M": 20, 
         "N": 20,
-        "num_robots": UserSettableParameter("slider", "Number of Robots", 5, 1, 20),
-        "num_boxes": UserSettableParameter("slider", "Number of Boxes", 20, 5, 50)
+        "num_robots": Slider( "Number of Robots", 5, 1, 20),
+        "num_boxes": Slider("Number of Boxes", 20, 5, 50)
     }
 )
