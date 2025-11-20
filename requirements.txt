@@ -1,0 +1,6 @@
+mesa==2.2.1
+numpy 
+matplotlib 
+pandas
+solara
+scipy
