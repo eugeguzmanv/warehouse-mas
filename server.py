@@ -1,8 +1,8 @@
-from mesa.visualization.modules import CanvasGrid, ChartModule
+from mesa.visualization.modules import CanvasGrid, TextElement
 from mesa.visualization.ModularVisualization import ModularServer
-from mesa.visualization.UserParam import Slider
 from model import WarehouseModel
 from agents import RobotAgent, Box, Shelf, Obstacle
+import time
 
 def agent_portrayal(agent):
     """
@@ -61,16 +61,30 @@ def agent_portrayal(agent):
 # Grid Setup
 grid = CanvasGrid(agent_portrayal, 20, 20, 500, 500)
 
-# Statistics Chart
-chart = ChartModule([
-    {"Label": "Boxes Stacked", "Color": "Black"},
-    {"Label": "Total Movements", "Color": "Red"}
-], data_collector_name='datacollector')
+# Simple text element to show total movements and running time
+class MovementTimeElement(TextElement):
+    """Displays total robot movements and elapsed running time."""
+
+    def render(self, model):
+        total_movements = sum(
+            a.movements_made for a in model.schedule.agents if isinstance(a, RobotAgent)
+        )
+        # Use model.start_time if available, otherwise approximate with 0
+        start = getattr(model, "start_time", None)
+        if start is None:
+            elapsed = 0.0
+        else:
+            elapsed = time.time() - start
+
+        # Format elapsed as seconds with 1 decimal
+        return f"Movements: {total_movements} — Elapsed: {elapsed:.1f}s"
+
+movement_time = MovementTimeElement()
 
 # Server Setup
 server = ModularServer(
     WarehouseModel,
-    [grid, chart],
+    [grid, movement_time],
     "Multi-Agent Warehouse",
     {
         "M": 20, 

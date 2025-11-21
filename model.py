@@ -2,6 +2,7 @@ from mesa import Model
 from mesa.time import RandomActivation
 from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
+import time
 from agents import RobotAgent, Box, Shelf, Obstacle
 
 class WarehouseModel(Model):
@@ -12,6 +13,8 @@ class WarehouseModel(Model):
         super().__init__()
         self.num_robots = num_robots
         self.num_boxes = num_boxes
+        # Track wall-clock start time for simple running-time display
+        self.start_time = time.time()
         self.grid = MultiGrid(M, N, True) # Torus=True for easier movement, or False for walls
         self.schedule = RandomActivation(self)
         self.running = True
