@@ -29,6 +29,20 @@ class Shelf(Agent):
         pass
 
 
+class Obstacle(Agent):
+    """
+    Obstacle that occupies space on the grid and blocks robot movement.
+    Obstacles are created in groups of 3 cells (handled by the model).
+    """
+
+    def __init__(self, unique_id, model, group_id=None):
+        super().__init__(unique_id, model)
+        self.group_id = group_id
+
+    def step(self):
+        pass
+
+
 class RobotAgent(Agent):
     """
     The Robot Agent that moves boxes to shelves.
@@ -160,8 +174,12 @@ class RobotAgent(Agent):
         if not self.model.grid.out_of_bounds(pos):
             contents = self.model.grid.get_cell_list_contents([pos])
             for obj in contents:
+                # Block movement into cells containing another robot or an obstacle
                 if isinstance(obj, RobotAgent):
                     return False  # Collision!
+                # Obstacle instances occupy cells and should block robots
+                if isinstance(obj, Obstacle):
+                    return False
             return True
         return False
 
@@ -189,6 +207,39 @@ class RobotAgent(Agent):
         # For visualization, removing from grid is sufficient.
 
     def place_box(self, shelf):
+        """
+        Attempt to place the carried box on the given shelf.
+        If the shelf cell is currently occupied by an Obstacle, find an
+        alternative shelf that has space and is not obstructed. If none
+        is available, perform a random move to avoid deadlock.
+        """
+        # Safety: ensure shelf has a position
+        if shelf.pos is None:
+            # Shelf not on grid; cannot place here
+            self.random_move()
+            return
+
+        # Check if the shelf cell contains an Obstacle
+        cell_contents = self.model.grid.get_cell_list_contents([shelf.pos])
+        for obj in cell_contents:
+            if isinstance(obj, Obstacle):
+                # Current shelf cell is obstructed. Find an alternative shelf
+                alt = self.find_closest_object(
+                    Shelf,
+                    lambda s: s.stack_height < s.max_height
+                    and s.pos is not None
+                    and not any(isinstance(o, Obstacle) for o in self.model.grid.get_cell_list_contents([s.pos])),
+                )
+
+                if alt:
+                    # Move towards alternative shelf (keep carrying box)
+                    self.move_towards(alt.pos)
+                else:
+                    # No available shelf free of obstacles — try to unstuck
+                    self.random_move()
+                return
+
+        # Place the box normally
         self.carrying_box = False
         shelf.stack_height += 1
         # Create a new box visual representation on the shelf (optional,

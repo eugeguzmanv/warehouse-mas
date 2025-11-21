@@ -2,7 +2,7 @@ from mesa.visualization.modules import CanvasGrid, ChartModule
 from mesa.visualization.ModularVisualization import ModularServer
 from mesa.visualization.UserParam import Slider
 from model import WarehouseModel
-from agents import RobotAgent, Box, Shelf
+from agents import RobotAgent, Box, Shelf, Obstacle
 
 def agent_portrayal(agent):
     """
@@ -21,7 +21,6 @@ def agent_portrayal(agent):
         
         if agent.carrying_box:
             portrayal["Color"] = "#FF0000" # Red if carrying
-            portrayal["text"] = "📦"
             portrayal["text_color"] = "white"
         else:
             portrayal["Color"] = "#0000FF" # Blue if empty
@@ -31,7 +30,7 @@ def agent_portrayal(agent):
         portrayal["w"] = 0.6
         portrayal["h"] = 0.6
         portrayal["Layer"] = 1
-        portrayal["Color"] = "#8B4513" # Brown
+        portrayal["Color"] = "#8B4513" # Brown 
         portrayal["Filled"] = "true"
 
     elif isinstance(agent, Shelf):
@@ -48,6 +47,14 @@ def agent_portrayal(agent):
         
         portrayal["text"] = str(agent.stack_height)
         portrayal["text_color"] = "black"
+
+    elif isinstance(agent, Obstacle):
+        portrayal["Shape"] = "rect"
+        portrayal["w"] = 0.9
+        portrayal["h"] = 0.9
+        portrayal["Layer"] = 1
+        portrayal["Filled"] = "true"
+        portrayal["Color"] = "#444444"  # Dark grey obstacle
 
     return portrayal
 
@@ -68,7 +75,7 @@ server = ModularServer(
     {
         "M": 20, 
         "N": 20,
-        "num_robots": Slider( "Number of Robots", 5, 1, 20),
-        "num_boxes": Slider("Number of Boxes", 20, 5, 50)
+        "num_robots": 5,
+        "num_boxes": 20,
     }
 )
