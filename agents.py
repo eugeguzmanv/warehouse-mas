@@ -1,10 +1,12 @@
 from mesa import Agent
 
+
 class Box(Agent):
     """
-    A box that needs to be stacked. 
+    A box that needs to be stacked.
     It is a passive object and does not move on its own.
     """
+
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
         self.is_stacked = False
@@ -12,10 +14,12 @@ class Box(Agent):
     def step(self):
         pass
 
+
 class Shelf(Agent):
     """
     A fixed location where boxes are stacked.
     """
+
     def __init__(self, unique_id, model, max_height=5):
         super().__init__(unique_id, model)
         self.stack_height = 0
@@ -24,10 +28,12 @@ class Shelf(Agent):
     def step(self):
         pass
 
+
 class RobotAgent(Agent):
     """
     The Robot Agent that moves boxes to shelves.
     """
+
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
         self.carrying_box = False
@@ -58,12 +64,12 @@ class RobotAgent(Agent):
 
         # 2. Find closest known box
         target = self.find_closest_object(Box, lambda b: not b.is_stacked)
-        
+
         # 3. Move towards it
         if target:
             self.move_towards(target.pos)
         else:
-            self.random_move() # Explore if no boxes found
+            self.random_move()  # Explore if no boxes found
 
     def execute_stacking_strategy(self):
         # 1. Check if at a shelf
@@ -73,42 +79,44 @@ class RobotAgent(Agent):
             if isinstance(obj, Shelf):
                 shelf = obj
                 break
-        
+
         # 2. If at valid shelf, place box
         if shelf and shelf.stack_height < shelf.max_height:
             self.place_box(shelf)
             return
 
         # 3. Find closest non-full shelf
-        target = self.find_closest_object(Shelf, lambda s: s.stack_height < s.max_height)
+        target = self.find_closest_object(
+            Shelf, lambda s: s.stack_height < s.max_height
+        )
 
         # 4. Move towards it
         if target:
             self.move_towards(target.pos)
         else:
-            self.random_move() # Should not happen if logic is correct, but safety fallback
+            self.random_move()  # Should not happen if logic is correct, but safety fallback
 
     def find_closest_object(self, agent_type, condition=None):
         """
-        Scans the grid for the closest object of type 'agent_type' 
+        Scans the grid for the closest object of type 'agent_type'
         that meets the optional 'condition'.
         """
-        closest_dist = float('inf')
+        closest_dist = float("inf")
         closest_obj = None
-        
-        # In a real simulation, agents might have limited vision. 
+
+        # In a real simulation, agents might have limited vision.
         # Here we assume shared knowledge for efficiency (or full vision).
         for agent in self.model.schedule.agents:
-            if isinstance(agent, agent_type):
+            if isinstance(agent, agent_type) and agent.pos is not None:
                 if condition and not condition(agent):
                     continue
-                
+
                 # Calculate Manhattan distance
                 dist = abs(self.pos[0] - agent.pos[0]) + abs(self.pos[1] - agent.pos[1])
                 if dist < closest_dist:
                     closest_dist = dist
                     closest_obj = agent
-                    
+
         return closest_obj
 
     def move_towards(self, target_pos):
@@ -117,25 +125,31 @@ class RobotAgent(Agent):
         """
         x_dir = 0
         y_dir = 0
-        
-        if target_pos[0] > self.pos[0]: x_dir = 1
-        elif target_pos[0] < self.pos[0]: x_dir = -1
-        
-        if target_pos[1] > self.pos[1]: y_dir = 1
-        elif target_pos[1] < self.pos[1]: y_dir = -1
-        
+
+        if target_pos[0] > self.pos[0]:
+            x_dir = 1
+        elif target_pos[0] < self.pos[0]:
+            x_dir = -1
+
+        if target_pos[1] > self.pos[1]:
+            y_dir = 1
+        elif target_pos[1] < self.pos[1]:
+            y_dir = -1
+
         # Prioritize the axis with larger distance
         possible_moves = []
-        if x_dir != 0: possible_moves.append((self.pos[0] + x_dir, self.pos[1]))
-        if y_dir != 0: possible_moves.append((self.pos[0], self.pos[1] + y_dir))
-        
+        if x_dir != 0:
+            possible_moves.append((self.pos[0] + x_dir, self.pos[1]))
+        if y_dir != 0:
+            possible_moves.append((self.pos[0], self.pos[1] + y_dir))
+
         # Try to move
         for next_pos in possible_moves:
             if self.is_cell_available(next_pos):
                 self.model.grid.move_agent(self, next_pos)
                 self.movements_made += 1
                 return
-        
+
         # If blocked, wait (do nothing) or random move to unstuck
         self.random_move()
 
@@ -147,7 +161,7 @@ class RobotAgent(Agent):
             contents = self.model.grid.get_cell_list_contents([pos])
             for obj in contents:
                 if isinstance(obj, RobotAgent):
-                    return False # Collision!
+                    return False  # Collision!
             return True
         return False
 
@@ -160,7 +174,7 @@ class RobotAgent(Agent):
         )
         # Filter out occupied cells
         valid_steps = [p for p in possible_steps if self.is_cell_available(p)]
-        
+
         if valid_steps:
             new_position = self.random.choice(valid_steps)
             self.model.grid.move_agent(self, new_position)
@@ -173,10 +187,10 @@ class RobotAgent(Agent):
         # We don't remove it from the schedule so we can still track it if needed,
         # or we can just mark it as picked up.
         # For visualization, removing from grid is sufficient.
-        
+
     def place_box(self, shelf):
         self.carrying_box = False
         shelf.stack_height += 1
-        # Create a new box visual representation on the shelf (optional, 
+        # Create a new box visual representation on the shelf (optional,
         # or just use the shelf color to indicate fullness)
         # For logic, we just increment shelf height.
