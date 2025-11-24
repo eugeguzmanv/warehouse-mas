@@ -1,11 +1,7 @@
 from mesa import Agent
 
 
-class Box(Agent):
-    """
-    A box that needs to be stacked.
-    It is a passive object and does not move on its own.
-    """
+class Box(Agent): #Definition of the box
 
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
@@ -15,10 +11,7 @@ class Box(Agent):
         pass
 
 
-class Shelf(Agent):
-    """
-    A fixed location where boxes are stacked.
-    """
+class Shelf(Agent): #Definition of the shelves (default spawn spot)
 
     def __init__(self, unique_id, model, max_height=5):
         super().__init__(unique_id, model)
@@ -29,11 +22,8 @@ class Shelf(Agent):
         pass
 
 
-class Obstacle(Agent):
-    """
-    Obstacle that occupies space on the grid and blocks robot movement.
-    Obstacles are created in groups of 3 cells (handled by the model).
-    """
+class Obstacle(Agent): # Blocks of 3 that block the agents movements
+    
 
     def __init__(self, unique_id, model, group_id=None):
         super().__init__(unique_id, model)
@@ -43,10 +33,7 @@ class Obstacle(Agent):
         pass
 
 
-class RobotAgent(Agent):
-    """
-    The Robot Agent that moves boxes to shelves.
-    """
+class RobotAgent(Agent): #The main agent that looks for and moves boxes
 
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
@@ -56,8 +43,8 @@ class RobotAgent(Agent):
 
     def step(self):
         """
-        The main decision loop (BDI architecture simplified).
-        1. Perceive: Check internal state (carrying box?).
+        The main decision loop:
+        1. Roam: Move randomly until a box is found
         2. Decide: Choose target (Box or Shelf).
         3. Act: Move or Interact.
         """
@@ -69,24 +56,19 @@ class RobotAgent(Agent):
             self.execute_retrieval_strategy()
 
     def execute_retrieval_strategy(self):
-        # 1. Scan for boxes at current location
+        # Check for boxes at current location
         cell_contents = self.model.grid.get_cell_list_contents([self.pos])
         for obj in cell_contents:
             if isinstance(obj, Box) and not obj.is_stacked:
                 self.pick_up_box(obj)
                 return
 
-        # 2. Find closest known box
-        target = self.find_closest_object(Box, lambda b: not b.is_stacked)
-
-        # 3. Move towards it
-        if target:
-            self.move_towards(target.pos)
-        else:
-            self.random_move()  # Explore if no boxes found
+        # Roam randomly until a box is found in the current cell. The agent knows where shelves are and will plan/move to them once a box is picked up.
+  
+        self.random_move()
 
     def execute_stacking_strategy(self):
-        # 1. Check if at a shelf
+        # Check if at a shelf
         cell_contents = self.model.grid.get_cell_list_contents([self.pos])
         shelf = None
         for obj in cell_contents:
@@ -94,21 +76,21 @@ class RobotAgent(Agent):
                 shelf = obj
                 break
 
-        # 2. If at valid shelf, place box
+        # If at valid shelf, place box
         if shelf and shelf.stack_height < shelf.max_height:
             self.place_box(shelf)
             return
 
-        # 3. Find closest non-full shelf
+        # Find closest non-full shelf
         target = self.find_closest_object(
             Shelf, lambda s: s.stack_height < s.max_height
         )
 
-        # 4. Move towards it
+        # Move towards it
         if target:
             self.move_towards(target.pos)
         else:
-            self.random_move()  # Should not happen if logic is correct, but safety fallback
+            self.random_move()  # Should not happen if logic is correct,  fallback
 
     def find_closest_object(self, agent_type, condition=None):
         """
@@ -118,8 +100,6 @@ class RobotAgent(Agent):
         closest_dist = float("inf")
         closest_obj = None
 
-        # In a real simulation, agents might have limited vision.
-        # Here we assume shared knowledge for efficiency (or full vision).
         for agent in self.model.schedule.agents:
             if isinstance(agent, agent_type) and agent.pos is not None:
                 if condition and not condition(agent):
@@ -135,7 +115,7 @@ class RobotAgent(Agent):
 
     def move_towards(self, target_pos):
         """
-        Simple greedy pathfinding with collision avoidance.
+        Greedy pathfinding with collision avoidance.
         """
         x_dir = 0
         y_dir = 0
@@ -164,29 +144,25 @@ class RobotAgent(Agent):
                 self.movements_made += 1
                 return
 
-        # If blocked, wait (do nothing) or random move to unstuck
+        # If blocked, wait or random move to unstuck
         self.random_move()
 
-    def is_cell_available(self, pos):
-        """
-        Checks if a cell is free of obstacles (Walls/Other Robots).
-        """
+    def is_cell_available(self, pos): #Check if a cell is free of obstacles
+       
         if not self.model.grid.out_of_bounds(pos):
             contents = self.model.grid.get_cell_list_contents([pos])
             for obj in contents:
                 # Block movement into cells containing another robot or an obstacle
                 if isinstance(obj, RobotAgent):
-                    return False  # Collision!
+                    return False  # a collision would happen
                 # Obstacle instances occupy cells and should block robots
                 if isinstance(obj, Obstacle):
                     return False
             return True
         return False
 
-    def random_move(self):
-        """
-        Moves to a random adjacent cell.
-        """
+    def random_move(self): #random movement to and adjacent cell
+     
         possible_steps = self.model.grid.get_neighborhood(
             self.pos, moore=False, include_center=False
         )
@@ -200,11 +176,8 @@ class RobotAgent(Agent):
 
     def pick_up_box(self, box):
         self.carrying_box = True
-        # Remove box from grid so it "disappears" into the robot inventory
+        # Remove box from grid so it's cell is now free
         self.model.grid.remove_agent(box)
-        # We don't remove it from the schedule so we can still track it if needed,
-        # or we can just mark it as picked up.
-        # For visualization, removing from grid is sufficient.
 
     def place_box(self, shelf):
         """
@@ -213,7 +186,7 @@ class RobotAgent(Agent):
         alternative shelf that has space and is not obstructed. If none
         is available, perform a random move to avoid deadlock.
         """
-        # Safety: ensure shelf has a position
+        # Ensure the shelf has a position
         if shelf.pos is None:
             # Shelf not on grid; cannot place here
             self.random_move()
@@ -235,13 +208,11 @@ class RobotAgent(Agent):
                     # Move towards alternative shelf (keep carrying box)
                     self.move_towards(alt.pos)
                 else:
-                    # No available shelf free of obstacles — try to unstuck
+                    # No available shelf free of obstacles, try to unstuck
                     self.random_move()
                 return
 
         # Place the box normally
         self.carrying_box = False
         shelf.stack_height += 1
-        # Create a new box visual representation on the shelf (optional,
-        # or just use the shelf color to indicate fullness)
-        # For logic, we just increment shelf height.
+      

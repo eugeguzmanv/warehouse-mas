@@ -5,9 +5,7 @@ from agents import RobotAgent, Box, Shelf, Obstacle
 import time
 
 def agent_portrayal(agent):
-    """
-    Defines how agents look in the browser.
-    """
+    # Styling of agents
     if agent is None:
         return
 
@@ -30,7 +28,7 @@ def agent_portrayal(agent):
         portrayal["w"] = 0.6
         portrayal["h"] = 0.6
         portrayal["Layer"] = 1
-        portrayal["Color"] = "#8B4513" # Brown 
+        portrayal["Color"] = "#8B4513" 
         portrayal["Filled"] = "true"
 
     elif isinstance(agent, Shelf):
@@ -39,11 +37,11 @@ def agent_portrayal(agent):
         portrayal["h"] = 1
         portrayal["Layer"] = 0
         portrayal["Filled"] = "true"
-        # Gradient color based on fullness
+        # Color of stacks depending on full/ not full
         if agent.stack_height >= agent.max_height:
-            portrayal["Color"] = "#000000" # Black if full
+            portrayal["Color"] = "#000000" 
         else:
-            portrayal["Color"] = "#CCCCCC" # Grey if space available
+            portrayal["Color"] = "#CCCCCC" 
         
         portrayal["text"] = str(agent.stack_height)
         portrayal["text_color"] = "black"
@@ -54,7 +52,7 @@ def agent_portrayal(agent):
         portrayal["h"] = 0.9
         portrayal["Layer"] = 1
         portrayal["Filled"] = "true"
-        portrayal["Color"] = "#444444"  # Dark grey obstacle
+        portrayal["Color"] = "#444444"  
 
     return portrayal
 
